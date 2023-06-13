@@ -31,10 +31,10 @@ images must be organized ideally in folders and subfolders as follow:
 'ProjectName'
 ├───'StudySiteName'
 ├──────'PlotName_date'
-      0001.TIFF
-			0002.TIFF
-			0003.TIFF
-			...
+              0001.TIFF
+              0002.TIFF
+              0003.TIFF
+              ...
 ```
 
 Folders of images needs to be copied to the appropriate HPC location, where 3D model processing will be done
