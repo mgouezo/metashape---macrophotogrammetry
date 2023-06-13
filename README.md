@@ -4,8 +4,7 @@ Underwater macrophotogrammetry metashape workflow to run projects in batch on a 
 # Short description / application
 
 A tool to make it easy to run reproducible, automated, documented Metashape photogrammetry workflows in batch on a high performance computer cluster. This workflow was adapted from ucdavis/metashape for underwater macrophotogrammetry of small ~20cm diameter plots and is not GUI free. 
-The full photogrammetry workflow is detailed in Gouezo et al. 2023. Underwater macrophotogrammetry to monitor in situ benthic communities at submillimetre scale. Methods in Ecology and Evolution. Accepted MS 13/06/2023
-Once 3D models are made, manual steps are required to orientate the model and build DEM and orthomosaics as described in Gouezo et al. (2023)
+The full photogrammetry workflow is detailed in Gouezo et al. 2023. Underwater macrophotogrammetry to monitor in situ benthic communities at submillimetre scale. Methods in Ecology and Evolution. Accepted MS 13/06/2023. Once 3D models are made, manual steps are required to orientate the model and build DEM and orthomosaics as described in Gouezo et al. (2023)
 
 ## Setup (similar to as ucdavis/metashape)
 
