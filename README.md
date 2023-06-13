@@ -45,7 +45,7 @@ Folders of images needs to be copied to the appropriate HPC location, where 3D m
 login to HPC
 
 clone "etc" and "bin" folders into the `StudySiteName` folder
-If needed modify parameters in `Reefs3D_template.ylm` 
+If needed modify parameters in `etc/Reefs3D_template.ylm` 
 
 change the directory to the folder `StudySiteName`, e.g. run in command window `cd /{repo_path}/StudySiteName`
 
