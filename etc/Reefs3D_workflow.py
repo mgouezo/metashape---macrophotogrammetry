@@ -32,10 +32,10 @@ doc, log, run_id = meta.project_setup(cfg)
 
 meta.enable_and_log_gpu(log)
 
-if cfg["load_project"] == "":  # only add photos if this is a brand new project, not based off an existing project
+if cfg["load_project"] == "":  
     meta.add_photos(doc, cfg)
 
-if cfg["alignPhotos"]["enabled"]: # added details by MG
+if cfg["alignPhotos"]["enabled"]: 
     meta.align_photos(doc, log)
     
 if cfg["optimizeCameras"]["enabled"]:
@@ -52,12 +52,6 @@ if cfg["buildDenseCloud"]["enabled"]:
 
 if cfg["buildModel"]["enabled"]:
     meta.build_model(doc, log, run_id, cfg)
-
-if cfg["buildDem"]["enabled"]:
-    meta.build_dem(doc, log, run_id, cfg)
-
-if cfg["buildOrthomosaic"]["enabled"]:
-    meta.build_orthomosaics(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 
