@@ -198,11 +198,13 @@ def add_photos(doc, cfg):
     #Estimate image quality
     for camera in doc.chunk.cameras:
         doc.chunk.analyzePhotos(doc.chunk.cameras)
-        if float(camera.meta["Image/Quality"]) < 0.2:
+        if float(camera.meta["Image/Quality"]) < 0.25:     # Edit here if needed
             camera.enabled = False
             print ('DISABLE %s' %(camera))
             
-    
+    #if markers are there let them be detects
+    doc.chunk.detectMarkers(target_type=Metashape.CircularTarget12bit,
+                            tolerance=50)
 
     doc.save()
 
@@ -244,10 +246,6 @@ def align_photos(doc, log_file):
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Align Photos', time1])+'\n')
-        
-    #if markers are there let them be detects
-    doc.chunk.detectMarkers(target_type=Metashape.CircularTarget12bit,
-                            tolerance=20)
     
     #change accuracy of markers and scale in reference settings - CHECK if WORKING    
     doc.chunk.marker_location_accuracy = Metashape.Vector([0.00005, 0.00005, 0.00005])
@@ -421,53 +419,6 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build Dense Cloud', time3])+'\n')
-        
-
-
-    ### Classify ground points
-
-
-    #if cfg["buildDenseCloud"]["classify"]:
-
-        # get a beginning time stamp for the next step
-        #timer_a = time.time()
-
-        #doc.chunk.dense_cloud.classifyGroundPoints(max_angle = cfg["buildDenseCloud"]["max_angle"],
-                                                   #max_distance = cfg["buildDenseCloud"]["max_distance"],
-                                                   #cell_size = cfg["buildDenseCloud"]["cell_size"])
-        #doc.save()
-
-        # get an ending time stamp for the previous step
-        #timer_b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        #time_tot = diff_time(timer_b, timer_a)
-
-        # record results to file
-        #with open(log_file, 'a') as file:
-            #file.write(sep.join(['Classify Ground Points', time_tot]) + '\n')
-
-
-
-    ### Export points
-
-    #if cfg["buildDenseCloud"]["export"]:
-
-        # output_file = os.path.join(cfg["output_path"], run_id + '_points.las')
-
-        # if cfg["buildDenseCloud"]["classes"] == "ALL":
-            # # call without classes argument (Metashape then defaults to all classes)
-            # doc.chunk.exportPoints(path = output_file,
-                                   # source_data = Metashape.DenseCloudData,
-                                   # format = Metashape.PointsFormatLAS,
-                                   # subdivide_task = True)
-        # else:
-            # # call with classes argument
-            # doc.chunk.exportPoints(path = output_file,
-                                   # source_data = Metashape.DenseCloudData,
-                                   # format = Metashape.PointsFormatLAS,
-                                   # classes = cfg["buildDenseCloud"]["classes"],
-                                   # subdivide_task = True)
 
     return True
 
@@ -497,13 +448,6 @@ def build_model(doc, log_file, run_id, cfg):
                            fill_holes = False,
                            ghosting_filter = True)
 
-    doc.chunk.buildTiledModel(source_data = Metashape.ModelData,
-			      tile_size = 256,
-                              face_count = 500000,
-                              ghosting_filter=False,
-                              transfer_texture=True,
-                              subdivide_task = True)
-
     # output_file = os.path.join(cfg["output_path"], run_id + '_model.obj')
 
     # doc.chunk.exportModel(path=output_file,
@@ -526,154 +470,6 @@ def build_model(doc, log_file, run_id, cfg):
         file.write(sep.join(['Build Model', time4])+'\n')
 
     return True
-
-
-
-def build_dem(doc, log_file, run_id, cfg):
-    '''
-    Build and export DEM
-    '''
-    # get a beginning time stamp for the next step
-    timer5a = time.time()
-
-    #prepping params for buildDem
-    projection = Metashape.OrthoProjection()
-    # DS: leave crs unset as we are working in local coordinates only ## MG changed that - see if working
-    projection.crs = Metashape.CoordinateSystem(PhotoScan.CoordinateSystem('LOCAL_CS["Local Coordinates",LOCAL_DATUM["Local Datum",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]]]'))
-
-    #prepping params for export
-    compression = Metashape.ImageCompression()
-    compression.tiff_big = cfg["buildDem"]["tiff_big"]
-    compression.tiff_tiled = cfg["buildDem"]["tiff_tiled"]
-    compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
-
-    if (cfg["buildDem"]["type"] == "DSM") | (cfg["buildDem"]["type"] == "both"):
-        # call without classes argument (Metashape then defaults to all classes)
-        doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
-                           subdivide_task = True,
-                           projection = projection)
-        output_file = os.path.join(cfg["output_path"], run_id + '_dsm.tif')
-        if cfg["buildDem"]["export"]:
-            doc.chunk.exportRaster(path=output_file,
-                                   projection=projection,
-                                   nodata_value=cfg["buildDem"]["nodata"],
-                                   source_data=Metashape.ElevationData,
-                                   image_compression=compression)
-    if (cfg["buildDem"]["type"] == "DTM") | (cfg["buildDem"]["type"] == "both"):
-        # call with classes argument
-        doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
-                           #classes = Metashape.PointClass.Ground,
-                           subdivide_task = True,
-                           projection = projection)
-        output_file = os.path.join(cfg["output_path"], run_id + '_dtm.tif')
-        if cfg["buildDem"]["export"]:
-            doc.chunk.exportRaster(path=output_file,
-                                   projection=projection,
-                                   nodata_value=cfg["buildDem"]["nodata"],
-                                   source_data=Metashape.ElevationData,
-                                   image_compression=compression,
-                                   image_format=Metashape.ImageFormatTIFF
-                                   ) #resolution=10)
-    if (cfg["buildDem"]["type"] != "DTM") & (cfg["buildDem"]["type"] == "both") & (cfg["buildDem"]["type"] == "DSM"):
-        raise ValueError("DEM type must be either 'DSM' or 'DTM' or 'both'")
-
-    # get an ending time stamp for the previous step
-    timer5b = time.time()
-
-    # calculate difference between end and start time to 1 decimal place
-    time5 = diff_time(timer5b, timer5a)
-
-    # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build DEM', time5])+'\n')
-
-    return True
-
-# This is just a helper function called by build_orthomosaic
-def export_orthomosaic(doc, log_file, run_id, cfg):
-    '''
-    Export orthomosaic
-    '''
-
-
-
-    return True
-
-
-def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending):
-    '''
-    Helper function called by build_orthomosaics. build_export_orthomosaic builds and exports an ortho based on the current elevation data.
-    build_orthomosaics sets the current elevation data and calls build_export_orthomosaic (one or more times depending on how many orthomosaics requested)
-    '''
-
-    # get a beginning time stamp for the next step
-    timer6a = time.time()
-
-    #prepping params for buildDem
-    projection = Metashape.OrthoProjection()
-    #projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
-
-    doc.chunk.buildOrthomosaic(surface_data = Metashape.ModelData, #ElevationData,
-                               blending_mode = Metashape.MosaicBlending,
-                               fill_holes = True,
-                               refine_seamlines = True,
-                               subdivide_task = True,
-                               projection = projection)
-
-    doc.save()
-
-    ## Export orthomosaic
-    output_file = os.path.join(cfg["output_path"], run_id + '_ortho_dtm.tif')
-
-    compression = Metashape.ImageCompression()
-    compression.tiff_big = True
-    compression.tiff_tiled = False
-    compression.tiff_overviews = True
-
-    projection = Metashape.OrthoProjection()
-    
-    doc.chunk.exportRaster(path = output_file,
-                           projection = projection,
-                           nodata_value =-32767,
-                           source_data = Metashape.OrthomosaicData,
-                           image_compression = compression)
-
-    # get an ending time stamp for the previous step
-    timer6b = time.time()
-
-    # calculate difference between end and start time to 1 decimal place
-    time6 = diff_time(timer6b, timer6a)
-
-    # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Orthomosaic', time6]) + '\n')
-
-    return True
-
-
-def build_orthomosaics(doc, log_file, run_id, cfg):
-    '''
-    Build orthomosaic. This function just calculates the needed elevation data(s) and then calls build_export_orthomosaic to do the actual building and exporting. It does this multiple times if orthos based on multiple surfaces were requsted
-    '''
-
-    # prep projection for export step below (in case export is enabled)
-    projection = Metashape.OrthoProjection()
-    #projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
-
-    # get a beginning time stamp for the next step
-    timer6a = time.time()
-
-    # what should the orthomosaic filename end in? e.g., DSM, DTM, USGS to indicate the surface it was built on
-    file_ending = "DTM"
-
-    doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
-                       subdivide_task = True,
-                       projection = projection)
-    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "dtm")
- 
-    return True
-
-
 
 
 
